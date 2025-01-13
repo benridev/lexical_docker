@@ -11,4 +11,4 @@ $ docker-compose up -d
 $ docker exec -it lexical-pg bash
 $ npm run dev
 ## local url
-[localhost](http://localhost:3000/)
+http://localhost:3000/
