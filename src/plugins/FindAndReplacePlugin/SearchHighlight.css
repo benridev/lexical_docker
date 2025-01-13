@@ -1,0 +1,28 @@
+.search-highlight-bg {
+  background-color: rgba(255, 217, 0, 0.4);
+  margin: 0;
+  color: transparent;
+  height: 18px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  /* transition: opacity 0.5s; */
+  opacity: 0.5;
+}
+
+.search-highlight-current{
+  border: solid 1px red;
+}
+
+/* .search-highlight-bg {
+  transform: translate(287.828px, 100.7969px);
+  margin: 0;
+  color: transparent;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 10;
+  transition: opacity 0.5s;
+  border-bottom: 2px solid cyan !important;
+} */

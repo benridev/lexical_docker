@@ -1,0 +1,21 @@
+version: '3.3'
+
+services:
+  web:
+    container_name: lexical-pg
+    build:
+      context: .
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '0.80'
+          memory: 3G
+    command: bash -c 'tail -f /dev/null'
+    ports:
+      - 3000:3000
+      - 24678:24678
+      - 4173:4173
+    volumes:
+      - .:/app
+      - /app/node_modules
