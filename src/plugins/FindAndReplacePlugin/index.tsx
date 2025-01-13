@@ -36,7 +36,7 @@ interface ReplacePayload {
     currentFindIndex: number
 }
 export interface NodekeyOffset {
-    key: string, offset: SplitOffset, pairKey: number | undefined
+    key: string, offset: SplitOffset, pairKey?: number 
 }
 
 export interface SplitOffset {
