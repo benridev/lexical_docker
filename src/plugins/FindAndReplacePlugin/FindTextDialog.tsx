@@ -9,7 +9,9 @@ export function FindTextDialog({
     previousSearchText,
     setPreviousSearchText,
     onClickReplace,
-    onClickReplaceOnce
+    onClickReplaceOnce,
+    onClickPrevious,
+    onClickNext
 }: {
     onChange: Dispatch<string>;
     onChangeReplaceText: Dispatch<string>;
@@ -19,6 +21,8 @@ export function FindTextDialog({
     setPreviousSearchText: Dispatch<string>;
     onClickReplace: Dispatch<number>;
     onClickReplaceOnce:Dispatch<number>;
+    onClickPrevious:void;
+    onClickNext:void;
 }): JSX.Element {
 
     const [inputText, setInputText] = useState(previousSearchText);
@@ -64,10 +68,10 @@ export function FindTextDialog({
                             data-test-id="image-modal-alt-text-input"
                         />
                         <div className="d-flex border-bottom border-end border-top border-1 border-secondary rounded-end rounded-bottom-0">
-                            <button title="Find Next" type="button" className="rounded-0 toolbar-item" >
+                            <button title="Find Next" type="button" className="rounded-0 toolbar-item" onClick={onClickNext}>
                                 <span className="icon find-next  m-0"></span>
                             </button>
-                            <button title="Find Previous" type="button" className="rounded-0  toolbar-item">
+                            <button title="Find Previous" type="button" className="rounded-0  toolbar-item" onClick={onClickPrevious}>
                                 <span className="icon find-previous m-0"></span>
                             </button>
                         </div>

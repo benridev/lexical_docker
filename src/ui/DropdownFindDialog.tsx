@@ -17,6 +17,8 @@ type Props = {
   onChangeReplaceText:Dispatch<string>;
   doReplace:Dispatch<number>;
   doReplaceOnce:Dispatch<number>;
+  findPrevious:()=> void;
+  findNext:()=> void;
 };
 
 export default function DropdownFindDialog({
@@ -25,6 +27,8 @@ export default function DropdownFindDialog({
   onChangeReplaceText,
   doReplace,
   doReplaceOnce,
+  findPrevious,
+  findNext,
   ...rest
 }: Props) {
   const [editor] = useLexicalComposerContext();
@@ -53,6 +57,8 @@ export default function DropdownFindDialog({
         onChangeReplaceText={onChangeReplaceText}
         onClickReplace={doReplace}
         onClickReplaceOnce={doReplaceOnce}
+        onClickPrevious={findPrevious}
+        onClickNext={findNext}
          />
     </DropUp>
   );

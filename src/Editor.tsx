@@ -23,7 +23,7 @@ import { TabIndentationPlugin } from '@lexical/react/LexicalTabIndentationPlugin
 import { TablePlugin } from '@lexical/react/LexicalTablePlugin';
 import useLexicalEditable from '@lexical/react/useLexicalEditable';
 import * as React from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { CAN_USE_DOM } from '../shared/src/canUseDOM';
 
 import { createWebsocketProvider } from './collaboration';
@@ -74,7 +74,6 @@ import { Highlight } from './plugins/FindAndReplacePlugin';
 import SearchHighlight, { FloatingSearchHighlight } from './plugins/FindAndReplacePlugin/SearchHighlight';
 import type { NodekeyOffset, SplitOffset } from './plugins/FindAndReplacePlugin';
 import { floatingStyle } from './utils/getFloatingSearchHighlightStyle';
-import { replace } from 'lodash';
 
 const skipCollaborationInit =
   // @ts-expect-error
@@ -121,9 +120,7 @@ export default function Editor(): JSX.Element {
   const [replaceString, setReplaceString] = useState<String>('');
   const [replaceTrigger, setReplaceTrigger] = useState<Number>(0);
   const [replaceOnceTrigger, setReplaceOnceTrigger] = useState<Number>(0);
-  // useEffect(()=>{
-  //   console.log(searchString);
-  // },[searchString])
+  const [findIndex, setFindIndex] = useState<Number>(1);
 
   useEffect(() => {
     const updateViewPortWidth = () => {
@@ -142,12 +139,49 @@ export default function Editor(): JSX.Element {
     };
   }, [isSmallWidthViewport]);
 
-  // useEffect(() => {
-  //   console.log(listOffset);
-  // }, [listOffset])
+  const findNext = () => {
+    var max = getMaxFoundPair();
+    if (getMaxFoundPair() > 0) {
+      if (findIndex == max) {
+        setFindIndex(1)
+      } else {
+        setFindIndex((current) => {
+          return current + 1;
+        })
+      }
+    }
+  }
+  const findPrevious = () => {
+    var max = getMaxFoundPair();
+    if (getMaxFoundPair() > 0) {
+      if (findIndex > 1) {
+        setFindIndex((current) => {
+          return current - 1;
+        })
+      } else {
+        setFindIndex(max)
+      }
+    }
+  }
+  function getMaxFoundPair() {
+    var max = 0;
+    listOffset.map((item) => {
+      if (item.pairKey > max) {
+        max = item.pairKey;
+      }
+    });
+    return max;
+  }
   return (
     <>
-      {isRichText && <ToolbarPlugin setIsLinkEditMode={setIsLinkEditMode} setSearchString={setSearchString} setReplaceString={setReplaceString} doReplace={setReplaceTrigger} doReplaceOnce={setReplaceOnceTrigger}/>}
+      {isRichText && <ToolbarPlugin
+        setIsLinkEditMode={setIsLinkEditMode}
+        setSearchString={setSearchString}
+        setReplaceString={setReplaceString}
+        doReplace={setReplaceTrigger}
+        doReplaceOnce={setReplaceOnceTrigger}
+        findNext={findNext}
+        findPrevious={findPrevious} />}
       <div
         className={`editor-container ${showTreeView ? 'tree-view' : ''} ${!isRichText ? 'plain-text' : ''
           }`}>
@@ -158,7 +192,6 @@ export default function Editor(): JSX.Element {
         <ComponentPickerPlugin />
         <EmojiPickerPlugin />
         <AutoEmbedPlugin />
-
         <MentionsPlugin />
         <EmojisPlugin />
         <HashtagPlugin />
@@ -168,7 +201,16 @@ export default function Editor(): JSX.Element {
         <CommentPlugin
           providerFactory={isCollab ? createWebsocketProvider : undefined}
         />
-        <Highlight searchString={searchString} setSearchString={setSearchString} setListOffset={setListOffset} replaceString={replaceString} replaceTrigger={replaceTrigger} replaceOnceTrigger={replaceOnceTrigger}/>
+        <Highlight
+          searchString={searchString}
+          setSearchString={setSearchString}
+          originListOffset={listOffset}
+          setListOffset={setListOffset}
+          replaceString={replaceString}
+          replaceTrigger={replaceTrigger}
+          replaceOnceTrigger={replaceOnceTrigger}
+          findIndex={findIndex}
+          setFindIndex={setFindIndex} />
         {isRichText ? (
           <>
             {isCollab ? (
@@ -221,8 +263,8 @@ export default function Editor(): JSX.Element {
             {floatingAnchorElem &&
               (
                 <>
-                 <SearchHighlight anchorElem={floatingAnchorElem} listOffset={listOffset} setStyles={setStyles} />
-                 <FloatingSearchHighlight anchorElem={floatingAnchorElem} styles={styles}/>
+                  <SearchHighlight anchorElem={floatingAnchorElem} listOffset={listOffset} setStyles={setStyles} />
+                  <FloatingSearchHighlight anchorElem={floatingAnchorElem} styles={styles} findIndex={findIndex} />
                 </>
               )
 

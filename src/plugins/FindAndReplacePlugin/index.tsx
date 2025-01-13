@@ -6,14 +6,13 @@ import {
     createCommand,
     $getNodeByKey,
     $isTextNode,
-    $createNodeSelection,
-    $setSelection
 } from 'lexical';
-import { Dispatch, useEffect, useState } from 'react';
+import { Dispatch, useEffect, useState, useRef } from 'react';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import type { LexicalNode, ElementNode } from "lexical";
 import { $isElementNode } from "lexical";
 import { mergeRegister } from '@lexical/utils';
+import { findIndex } from 'lodash';
 
 export const DO_REPLACE_COMMAND: LexicalCommand<ReplacePayload> =
     createCommand('DO_REPLACE_COMMAND');
@@ -33,10 +32,11 @@ interface HighlightNodes {
 
 interface ReplacePayload {
     replaceString: string,
-    nodeKeyOffsetList: NodekeyOffset[]
+    nodeKeyOffsetList: NodekeyOffset[],
+    currentFindIndex: number
 }
 export interface NodekeyOffset {
-    key: string, offset: SplitOffset, pairKey:number|undefined
+    key: string, offset: SplitOffset, pairKey: number | undefined
 }
 
 export interface SplitOffset {
@@ -328,9 +328,9 @@ function buildNodeKeyOffsetList(hNode: HighlightNodes, additionLocations: String
     }
 }
 
-export function Highlight(props: { searchString: string, setSearchString: Dispatch<string>, setListOffset: Dispatch<NodekeyOffset[]>, replaceString: string, replaceTrigger: number , replaceOnceTrigger:number}) {
+export function Highlight(props: { searchString: string, setSearchString: Dispatch<string>, originListOffset: NodekeyOffset[], setListOffset: Dispatch<NodekeyOffset[]>, replaceString: string, replaceTrigger: number, replaceOnceTrigger: number, findIndex: number, setFindIndex: Dispatch<number> }) {
     const [editor] = useLexicalComposerContext();
-    const [listOffset, _setListOffset] = useState<NodekeyOffset[]>([]);
+    const listOffset = useRef<NodekeyOffset[]>([]);
     const [replaced, setReplaced] = useState<Boolean>(false);
 
     useEffect(() => {
@@ -339,40 +339,66 @@ export function Highlight(props: { searchString: string, setSearchString: Dispat
             return;
         }
         editor.dispatchCommand(DO_SEARCH_COMMAND, props.searchString);
+        props.setFindIndex(1);
+    }, [props.searchString]);
+
+    useEffect(() => {
         if (replaced === true) {
             editor.dispatchCommand(DO_SEARCH_COMMAND, props.searchString);
             setTimeout(() => {
+                findNext();
                 setReplaced(false);
             }, 0);
         }
-    }, [props.searchString, replaced]);
+    }, [replaced]);
+
+    const findNext = () => {
+        var max = getMaxFoundPair();
+        if (getMaxFoundPair() > 0) {
+            if (props.findIndex > max) {
+                props.setFindIndex(1)
+            }
+        }
+    }
+
+    function getMaxFoundPair() {
+        var max = 0;
+        if (listOffset.current) {
+            listOffset.current.map((item) => {
+                if (item.pairKey !== undefined && item.pairKey > max) {
+                    max = item.pairKey;
+                }
+            });
+        }
+        return max;
+    }
 
     const updateListOffset = (nodeKeyOffsetList: NodekeyOffset[]) => {
         props.setListOffset(nodeKeyOffsetList);
-        _setListOffset(nodeKeyOffsetList);
+        listOffset.current = nodeKeyOffsetList;
     }
 
-    const selectNextKey = (key) =>{
-        const nodeSelection = $createNodeSelection();
-        // Add a node key to the selection.
-        nodeSelection.add(key);
-        $setSelection(nodeSelection);
-    }
+    // const selectNextKey = (key) => {
+    //     const nodeSelection = $createNodeSelection();
+    //     // Add a node key to the selection.
+    //     nodeSelection.add(key);
+    //     $setSelection(nodeSelection);
+    // }
+
     useEffect(() => {
         if (!props.searchString) {
             props.setListOffset([]);
             return;
         }
-        editor.dispatchCommand(DO_REPLACE_COMMAND, { replaceString: props.replaceString, nodeKeyOffsetList: listOffset })
+        editor.dispatchCommand(DO_REPLACE_COMMAND, { replaceString: props.replaceString, nodeKeyOffsetList: listOffset.current, currentFindIndex: props.findIndex })
     }, [props.replaceTrigger])
 
     useEffect(() => {
-        console.log('replaceOnce');
         if (!props.searchString) {
             props.setListOffset([]);
             return;
         }
-        editor.dispatchCommand(DO_REPLACE_ONCE_COMMAND, { replaceString: props.replaceString, nodeKeyOffsetList: listOffset })
+        editor.dispatchCommand(DO_REPLACE_ONCE_COMMAND, { replaceString: props.replaceString, nodeKeyOffsetList: listOffset.current, currentFindIndex: props.findIndex })
     }, [props.replaceOnceTrigger])
 
     useEffect(() => {
@@ -386,7 +412,6 @@ export function Highlight(props: { searchString: string, setSearchString: Dispat
                         let replaceStart: number, replaceEnd: number = 0;
                         payload.nodeKeyOffsetList.map((item) => {
                             if (previousNodeKey === item.key) {
-                                // console.log('lengthDiff', lengthDiff)
                                 replaceStart = item.offset.start - lengthDiff;
                                 replaceEnd = item.offset.end - lengthDiff;
                             } else {
@@ -398,7 +423,6 @@ export function Highlight(props: { searchString: string, setSearchString: Dispat
                             if (targetNode) {
                                 let newText = '';
                                 const text = targetNode.getTextContent();
-                                // console.log('targetNode.getTextContent()', text, replaceStart, replaceEnd)
                                 if (item.offset.isReplace) {
                                     newText = text.substring(0, replaceStart) + payload.replaceString + text.substring(replaceEnd);
                                 } else {
@@ -432,8 +456,10 @@ export function Highlight(props: { searchString: string, setSearchString: Dispat
                         let replacedCount = 0;
                         let nextKey = '';
                         payload.nodeKeyOffsetList.some((item) => {
+                            if (item.pairKey != payload.currentFindIndex) {
+                                return false;
+                            }
                             if (previousNodeKey === item.key) {
-                                // console.log('lengthDiff', lengthDiff)
                                 replaceStart = item.offset.start - lengthDiff;
                                 replaceEnd = item.offset.end - lengthDiff;
                             } else {
@@ -467,7 +493,7 @@ export function Highlight(props: { searchString: string, setSearchString: Dispat
                             }
                             previousNodeKey = item.key;
                         });
-                        selectNextKey(nextKey);
+                        // selectNextKey(nextKey);
                     })
                     setReplaced(true);
                     return true;
@@ -493,26 +519,23 @@ export function Highlight(props: { searchString: string, setSearchString: Dispat
                         const nodeKeyOffsetList: NodekeyOffset[] = [];
                         nodes.map((node) => {
                             const hightlightTarget = highlightMultipleNode(node.node, searchString, { startIndex: 0, totalLength: node.node.getTextContent().length });
-                            // console.log(node, hightlightTarget, indexes);
                             const originalLocations: StringLocation[] = node.realLocations.map((rLocation) => {
                                 return { searchStart: rLocation.location, searchLength: rLocation.matched.length }
                             })
                             const additionLocations: StringLocation[] = [];
                             const mainIndex = { currentIndex: 0 };
                             hightlightTarget.map((hNode) => {
-                                // console.log(hNode);
-                                // console.log(mainIndex.currentIndex);
                                 buildNodeKeyOffsetList(hNode, additionLocations, originalLocations, mainIndex, nodeKeyOffsetList);
 
                             })
 
                         });
                         let previousPairKey = 0;
-                        nodeKeyOffsetList.map(function(item){
-                            if(item.offset.isReplace){
+                        nodeKeyOffsetList.map(function (item) {
+                            if (item.offset.isReplace) {
                                 previousPairKey += 1;
                                 item.pairKey = previousPairKey;
-                            }else{
+                            } else {
                                 item.pairKey = previousPairKey;
                             }
                         })

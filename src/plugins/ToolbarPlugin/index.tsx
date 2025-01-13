@@ -516,7 +516,9 @@ export default function ToolbarPlugin({
   setReplaceString,
   setIsLinkEditMode,
   doReplace,
-  doReplaceOnce
+  doReplaceOnce,
+  findPrevious,
+  findNext,
 
 }: {
   setSearchString: Dispatch<string>;
@@ -524,6 +526,9 @@ export default function ToolbarPlugin({
   setIsLinkEditMode: Dispatch<boolean>;
   doReplace:Dispatch<number>;
   doReplaceOnce:Dispatch<number>;
+  findPrevious:()=> void;
+  findNext:()=> void;
+
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
   const [activeEditor, setActiveEditor] = useState(editor);
@@ -1224,6 +1229,8 @@ export default function ToolbarPlugin({
           onChangeReplaceText={setReplaceString}
           doReplace={doReplace}
           doReplaceOnce={doReplaceOnce}
+          findNext={findNext}
+          findPrevious={findPrevious}
         />
         <ElementFormatDropdown
           disabled={!isEditable}
