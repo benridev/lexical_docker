@@ -4,6 +4,7 @@ This repo was clone from meta lexical playground, for mys purpose of investigati
 - find and replace
 - authenticated component
 - notice content component
+- internal anchor link( click link with hash element id)
 
 ## Setup
 $ cd lexical_docker    
