@@ -17,6 +17,6 @@ http://localhost:3000/
 ## Support me
 Buy me coffee: 
   - https://www.paypal.com/paypalme/benridev
-  - buymeacoffee.com/benridev     
+  - https://buymeacoffee.com/benridev    
 
 Subcribe Youtube channel: https://www.youtube.com/@benridev
